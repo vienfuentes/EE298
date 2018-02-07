@@ -66,6 +66,14 @@ def generateDataPoints(num, poly, noiseAmp):
 
 # noise added has a value smaller than the data generated to be not too noisy
 noiseAmp = 1 / 10000
+# the current alpha used is 0.01, however, this code was tested from 0.01 to 0.0005, 
+# with results in the acceptable range, GIVEN a certain range of other parameters.
+# other parameters modified were the amount of data points (should not be too few), and 
+# the amount of iterations (higher values could ideally could lower cost to 0, given enough time)
+# polynomial coefficients greater than 20 possibly could have inaccurate results; this could be
+# remedied by increasing the amount of iterations or the learning rate.
+# for the sake of speeding up runtime, the amount of iterations (and other corresponding parameters)
+# were left as seen here in the code
 x, y = generateDataPoints(250, p, noiseAmp)
 m, n = np.shape(x)
 iterations = 100000
