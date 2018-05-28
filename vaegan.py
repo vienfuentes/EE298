@@ -219,12 +219,12 @@ if(load_images_at_start):
 	print("Loading done")
 	x_train = np.asarray(x_train)
 
-half_batch = int(batch_size / 2)
-half_batch //= 2
-half_batch //= 2
+minibatch = int(batch_size / 2)
+minibatch //= 2
+minibatch //= 2
 
 for step in range(steps):
-	img_array = np.random.randint(1, 202600, half_batch)
+	img_array = np.random.randint(1, 202600, minibatch)
 	if(load_images_at_start):
 		img_array = img_array - 1
 		imgs = x_train[img_array - 1]
@@ -250,19 +250,19 @@ for step in range(steps):
 	enc_loss = vae_model.train_on_batch(imgs, imgs_vaeimp)
 	
 	# discriminator losses / training
-	disc_loss1 = discriminator2.train_on_batch(imgs, np.ones((half_batch,1)))
+	disc_loss1 = discriminator2.train_on_batch(imgs, np.ones((minibatch,1)))
 	lcode = encoder.predict(imgs)[2]
 	lc_img = decoder.predict(lcode)
-	disc_loss2 = discriminator2.train_on_batch(lc_img, np.zeros((half_batch,1)))
-	noise = np.random.normal(0, 1, (half_batch, latent_dim))
+	disc_loss2 = discriminator2.train_on_batch(lc_img, np.zeros((minibatch,1)))
+	noise = np.random.normal(0, 1, (minibatch, latent_dim))
 	gen_imgs = decoder.predict(noise)
-	disc_loss3 = discriminator2.train_on_batch(gen_imgs, np.zeros((half_batch,1)))
+	disc_loss3 = discriminator2.train_on_batch(gen_imgs, np.zeros((minibatch,1)))
 	
 	# generator losses / training
 	img_array = np.random.randint(1, 202600, batch_size)
 	if(load_images_at_start): 
 		img_array = img_array - 1;
-		img_array2 = img_array[0:half_batch]
+		img_array2 = img_array[0:minibatch]
 		imgs = x_train[img_array2]
 	else:
 		x_train = []
@@ -274,11 +274,11 @@ for step in range(steps):
 			img = norm_img(np.asarray(img_resize(img,64)))
 			#img = (np.asarray(img_resize(img,64)) - 127.5) / 127.5 # tanh
 			x_train.append(img)
-		imgs = np.asarray(x_train[0:half_batch])
+		imgs = np.asarray(x_train[0:minibatch])
 	latent_pred = encoder.predict(imgs)[2]
-	gen_loss1 = generator_model.train_on_batch(latent_pred, np.ones((half_batch,1)))
-	noise = np.random.normal(0, 1, (half_batch, latent_dim))
-	gen_loss2 = generator_model.train_on_batch(noise, np.ones((half_batch,1)))
+	gen_loss1 = generator_model.train_on_batch(latent_pred, np.ones((minibatch,1)))
+	noise = np.random.normal(0, 1, (minibatch, latent_dim))
+	gen_loss2 = generator_model.train_on_batch(noise, np.ones((minibatch,1)))
 	
 	if((step + 1) % 50 == 0 and step < steps):
 		print("Weights updated at step", step, "!")
