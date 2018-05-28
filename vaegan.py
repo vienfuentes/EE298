@@ -51,8 +51,8 @@ batch_size = 64
 input_shape = (64, 64, 3)
 latent_dim = 128
 intermediate_dim = 256
-# epochs via minibatch
-epochs = 1000
+# steps via minibatch
+steps = 1000
 epsilon_std = 1.0
 kernel_size = 5
 optimizer = RMSprop(lr=0.0001)
@@ -166,8 +166,8 @@ x = Dense(512)(x)
 x = BatchNormalization()(x)
 
 # for VAEGAN
-lth_layer = Activation('relu')(x)
-disc_out = Dense(1, activation='sigmoid')(lth_layer)
+vaeimp_layer = Activation('relu')(x)
+disc_out = Dense(1, activation='sigmoid')(vaeimp_layer)
 
 # instantiate discriminator1 model
 discriminator1 = Model(disc_input, disc_out, name='discriminator1')
@@ -190,14 +190,14 @@ generator_model.compile(loss='binary_crossentropy', optimizer=optimizer)
 discriminator2 = Model(disc_input, disc_out, name='discriminator2')
 discriminator2.compile(loss='binary_crossentropy',optimizer=optimizer)
 
-discriminator_lth = Model(disc_input, lth_layer, name='discriminator_lth_layer')
-discriminator_lth.trainable = False
-outputs = discriminator_lth(decoder(encoder(inputs)[2]))
+discriminator_vaeimp = Model(disc_input, vaeimp_layer, name='discriminator_vaeimp_layer')
+discriminator_vaeimp.trainable = False
+outputs = discriminator_vaeimp(decoder(encoder(inputs)[2]))
 vae_model = Model(inputs, outputs)
 def encoder_loss(y_true,y_pred):
-	lth_loss = metrics.msle(K.flatten(y_true), K.flatten(y_pred))
+	vaeimp_loss = metrics.msle(K.flatten(y_true), K.flatten(y_pred))
 	kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-	return (lth_loss + kl_loss)
+	return (vaeimp_loss + kl_loss)
 vae_model.compile(loss=encoder_loss, optimizer=optimizer)
 
 
@@ -223,7 +223,7 @@ half_batch = int(batch_size / 2)
 half_batch //= 2
 half_batch //= 2
 
-for epoch in range(epochs):
+for step in range(steps):
 	img_array = np.random.randint(1, 202600, half_batch)
 	if(load_images_at_start):
 		img_array = img_array - 1
@@ -246,8 +246,8 @@ for epoch in range(epochs):
 		imgs = x_train[img_array]
 	else:
 		imgs = np.asarray(x_train)
-	imgs_lth = discriminator_lth.predict(imgs)
-	enc_loss = vae_model.train_on_batch(imgs, imgs_lth)
+	imgs_vaeimp = discriminator_vaeimp.predict(imgs)
+	enc_loss = vae_model.train_on_batch(imgs, imgs_vaeimp)
 	
 	# discriminator losses / training
 	disc_loss1 = discriminator2.train_on_batch(imgs, np.ones((half_batch,1)))
@@ -280,13 +280,13 @@ for epoch in range(epochs):
 	noise = np.random.normal(0, 1, (half_batch, latent_dim))
 	gen_loss2 = generator_model.train_on_batch(noise, np.ones((half_batch,1)))
 	
-	if((epoch + 1) % 50 == 0 and epoch < epochs):
-		print("Weights updated at epoch", epoch, "!")
+	if((step + 1) % 50 == 0 and step < steps):
+		print("Weights updated at step", step, "!")
 		encoder.save_weights('VAEGAN_enc.h5')
 		decoder.save_weights('VAEGAM_dec.h5')
 		discriminator1.save_weights('VAEGAN_disc.h5')
 	
-	print("Steps", epoch + 1)
+	print("Steps", step + 1)
 	print("Loss (D1 D2 D3):", disc_loss1, disc_loss2, disc_loss3)
 	print("Loss (G1 G2):", gen_loss1, gen_loss2)
 	print("Loss (VAE):", enc_loss)
